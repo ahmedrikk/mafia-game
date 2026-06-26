@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mafia - Party Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Screen: Login -->
+    <div id="screen-login" class="screen active">
+      <div class="logo">
+        <h1>MAFIA</h1>
+        <p>Trust no one. Survive the night.</p>
+      </div>
+      <div class="card">
+        <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+        <div class="button-group">
+          <button onclick="createRoom()" class="btn btn-primary">Create Room</button>
+          <div class="or-divider">or</div>
+          <input type="text" id="room-code" placeholder="Room Code" maxlength="6">
+          <button onclick="joinRoom()" class="btn btn-secondary">Join Room</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen: Lobby -->
+    <div id="screen-lobby" class="screen">
+      <div class="lobby-header">
+        <h2>Room: <span id="lobby-code"></span></h2>
+        <p>Waiting for players...</p>
+      </div>
+      <div class="players-grid" id="lobby-players"></div>
+      <button id="start-btn" onclick="startGame()" class="btn btn-primary hidden">Start Game</button>
+    </div>
+
+    <!-- Screen: Game -->
+    <div id="screen-game" class="screen">
+      <div class="game-header">
+        <div class="phase-badge" id="phase-badge">NIGHT 1</div>
+        <div class="role-badge" id="role-badge">Villager</div>
+      </div>
+
+      <div class="game-layout">
+        <div class="main-panel">
+          <div class="narrator" id="narrator">
+            Welcome to the game...
+          </div>
+
+          <div class="action-panel" id="action-panel">
+            <!-- Dynamic action buttons appear here -->
+          </div>
+
+          <div class="players-list" id="players-list">
+            <!-- Player cards -->
+          </div>
+        </div>
+
+        <div class="side-panel">
+          <div class="chat-box">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input" id="chat-input-area">
+              <input type="text" id="chat-input" placeholder="Discuss with villagers..." maxlength="200">
+              <button onclick="sendMessage()">Send</button>
+            </div>
+          </div>
+
+          <div class="game-log" id="game-log">
+            <h4>Game Log</h4>
+            <div id="log-entries"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen: Game Over -->
+    <div id="screen-end" class="screen">
+      <div class="end-card">
+        <h1 id="winner-text">Villagers Win!</h1>
+        <p id="end-message">The Mafia has been eliminated.</p>
+        <div class="final-roles" id="final-roles"></div>
+        <button onclick="location.reload()" class="btn btn-primary">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
