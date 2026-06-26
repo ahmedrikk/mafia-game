@@ -24,7 +24,7 @@ app.get('/health', (req, res) => {
 });
 
 const rooms = new Map();
-const ROLES = ['Mafia', 'Mafia', 'Doctor', 'Detective', 'Villager', 'Villager', 'Villager', 'Villager'];
+const ROLES = ['Mafia', 'Mafia', 'Doctor', 'Villager', 'Villager', 'Villager', 'Villager', 'Villager'];
 
 function generateRoomCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -43,7 +43,6 @@ function getRoleDescription(role) {
   const desc = {
     'Mafia': 'Eliminate villagers at night. Deceive during the day.',
     'Doctor': 'Choose someone to save from the Mafia each night.',
-    'Detective': 'Investigate one player each night to learn if they are Mafia.',
     'Villager': 'Find and vote out the Mafia during the day.'
   };
   return desc[role] || 'Survive and help your team.';
@@ -147,7 +146,6 @@ io.on('connection', (socket) => {
     const alivePlayers = room.players.filter(p => p.alive);
     const mafiaAlive = alivePlayers.filter(p => p.role === 'Mafia');
     const doctorAlive = alivePlayers.filter(p => p.role === 'Doctor');
-    const detectiveAlive = alivePlayers.filter(p => p.role === 'Detective');
 
     io.to(room.code).emit('phase-change', {
       phase: 'night',
@@ -155,8 +153,7 @@ io.on('connection', (socket) => {
       message: 'Night falls... everyone close your eyes.',
       activeRoles: {
         mafia: mafiaAlive.length > 0,
-        doctor: doctorAlive.length > 0,
-        detective: detectiveAlive.length > 0
+        doctor: doctorAlive.length > 0
       }
     });
   }
@@ -168,11 +165,9 @@ io.on('connection', (socket) => {
     const actions = room.nightActions;
     const mafiaTarget = actions.get('mafia-kill');
     const doctorSave = actions.get('doctor-save');
-    const detectiveCheck = actions.get('detective-check');
 
     let killed = null;
     let saved = false;
-    let detectiveResult = null;
 
     if (mafiaTarget) {
       if (doctorSave && doctorSave.target === mafiaTarget.target) {
@@ -183,16 +178,6 @@ io.on('connection', (socket) => {
           target.alive = false;
           killed = target.name;
         }
-      }
-    }
-
-    if (detectiveCheck) {
-      const target = room.players.find(p => p.id === detectiveCheck.target);
-      if (target) {
-        detectiveResult = {
-          name: target.name,
-          isMafia: target.role === 'Mafia'
-        };
       }
     }
 
@@ -212,7 +197,6 @@ io.on('connection', (socket) => {
       message: 'Morning breaks...',
       killed,
       saved,
-      detectiveResult: detectiveResult ? { ...detectiveResult, detectiveId: detectiveCheck.id } : null,
       players: room.players.map(p => ({ id: p.id, name: p.name, alive: p.alive }))
     });
   }
@@ -232,13 +216,6 @@ io.on('connection', (socket) => {
       room.nightActions.set('doctor-save', { id: socket.id, target: targetId });
       socket.emit('action-confirmed', { message: 'You have chosen someone to save.' });
       checkNightEnd(room);
-    } else if (action === 'investigate' && player.role === 'Detective') {
-      room.nightActions.set('detective-check', { id: socket.id, target: targetId });
-      const target = room.players.find(p => p.id === targetId);
-      socket.emit('action-confirmed', { 
-        message: `Investigation complete: ${target.name} is ${target.role === 'Mafia' ? 'MAFIA' : 'NOT MAFIA'}.` 
-      });
-      checkNightEnd(room);
     }
   });
 
@@ -246,14 +223,12 @@ io.on('connection', (socket) => {
     const alivePlayers = room.players.filter(p => p.alive);
     const mafiaNeeded = alivePlayers.filter(p => p.role === 'Mafia').length > 0 ? 1 : 0;
     const doctorNeeded = alivePlayers.filter(p => p.role === 'Doctor').length > 0 ? 1 : 0;
-    const detectiveNeeded = alivePlayers.filter(p => p.role === 'Detective').length > 0 ? 1 : 0;
 
     let completed = 0;
     if (room.nightActions.has('mafia-kill') || mafiaNeeded === 0) completed++;
     if (room.nightActions.has('doctor-save') || doctorNeeded === 0) completed++;
-    if (room.nightActions.has('detective-check') || detectiveNeeded === 0) completed++;
 
-    if (completed === 3) {
+    if (completed === 2) {
       setTimeout(() => startDayPhase(room), 2000);
     }
   }

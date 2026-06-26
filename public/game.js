@@ -76,7 +76,7 @@ socket.on('game-started', ({ role, description, mafiaTeam, phase, players: gameP
   renderGamePlayers(players);
 });
 
-socket.on('phase-change', ({ phase, round, message, killed, saved, detectiveResult, players: gamePlayers, activeRoles }) => {
+socket.on('phase-change', ({ phase, round, message, killed, saved, players: gamePlayers, activeRoles }) => {
   currentPhase = phase;
   hasActed = false;
   selectedTarget = null;
@@ -102,10 +102,6 @@ socket.on('phase-change', ({ phase, round, message, killed, saved, detectiveResu
       narratorText += `<br><br>No one died during the night.`;
     }
 
-    if (detectiveResult && detectiveResult.detectiveId === myId) {
-      narratorText += `<br><br><strong>Investigation Result:</strong> ${detectiveResult.name} is ${detectiveResult.isMafia ? '<span style="color: var(--danger)">MAFIA</span>' : '<span style="color: var(--success)">NOT MAFIA</span>'}`;
-    }
-
     if (!me?.alive) {
       narratorText += `<br><br><em>You are dead. You can observe but not participate.</em>`;
       document.getElementById('chat-input-area').style.display = 'none';
@@ -122,8 +118,6 @@ socket.on('phase-change', ({ phase, round, message, killed, saved, detectiveResu
         narratorText += '<br><br>Choose someone to eliminate.';
       } else if (myRole === 'Doctor' && activeRoles?.doctor) {
         narratorText += '<br><br>Choose someone to save (can be yourself).';  
-      } else if (myRole === 'Detective' && activeRoles?.detective) {
-        narratorText += '<br><br>Choose someone to investigate.';
       } else {
         narratorText += '<br><br>Close your eyes and wait...';
       }
@@ -219,7 +213,7 @@ function renderGamePlayers(gamePlayers, votes = []) {
   container.innerHTML = gamePlayers.map(p => {
     const isDead = !p.alive;
     const isMe = p.id === myId;
-    const canSelect = !isDead && !isMe && me?.alive && !hasActed && currentPhase === 'night' && ['Mafia', 'Doctor', 'Detective'].includes(myRole);
+    const canSelect = !isDead && !isMe && me?.alive && !hasActed && currentPhase === 'night' && ['Mafia', 'Doctor'].includes(myRole);
     const canVote = !isDead && !isMe && me?.alive && currentPhase === 'day' && !hasActed;
 
     return `
@@ -245,7 +239,6 @@ function selectPlayer(id) {
     let action = '';
     if (myRole === 'Mafia') action = 'kill';
     else if (myRole === 'Doctor') action = 'save';
-    else if (myRole === 'Detective') action = 'investigate';
 
     panel.innerHTML = `
       <p>Selected: <strong>${target.name}</strong></p>
@@ -291,8 +284,6 @@ function showNightActions(activeRoles) {
     panel.innerHTML = '<p style="color: var(--danger)">Select a player to eliminate.</p>';
   } else if (myRole === 'Doctor' && activeRoles?.doctor) {
     panel.innerHTML = '<p style="color: var(--success)">Select a player to save.</p>';
-  } else if (myRole === 'Detective' && activeRoles?.detective) {
-    panel.innerHTML = '<p style="color: var(--secondary)">Select a player to investigate.</p>';
   } else {
     panel.innerHTML = '<p style="color: var(--text-muted)">Close your eyes. Wait for your turn...</p>';
   }
@@ -348,7 +339,6 @@ function getRoleColor(role) {
   const colors = {
     'Mafia': 'var(--danger)',
     'Doctor': 'var(--success)',
-    'Detective': 'var(--secondary)',
     'Villager': 'var(--accent)'
   };
   return colors[role] || 'var(--text-muted)';
