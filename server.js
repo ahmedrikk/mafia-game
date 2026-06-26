@@ -7,7 +7,21 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Debug: log the working directory
+console.log('__dirname:', __dirname);
+console.log('public path:', path.join(__dirname, 'public'));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Explicit fallback for root path
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
 
 const rooms = new Map();
 const ROLES = ['Mafia', 'Mafia', 'Doctor', 'Detective', 'Villager', 'Villager', 'Villager', 'Villager'];
